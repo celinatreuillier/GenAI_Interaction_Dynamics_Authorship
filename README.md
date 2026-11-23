@@ -1,4 +1,4 @@
-# Authorship_Calibration_CoAuthor
+# GenAI Interaction Dynamics and Authorship
 
 This repository contains the code used for analyzing authorship calibration, i.e. the extent to which an individual's judgment about his contribution in an AI-assisted task aligns with his actual contribution in the final output.
 
