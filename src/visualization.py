@@ -5,57 +5,7 @@ import seaborn as sns
 from matplotlib.colors import Normalize
 from matplotlib import cm
 
-def plot_scores_distribution(df, color, name_fig, save_fig=False):
-    fig = plt.figure(figsize=(8, 3)) 
-
-    sns.histplot(df, bins=30, color=color, kde=True)
-
-    plt.xlabel("Authorship Calibration Score")
-    plt.ylabel("# Sessions")
-    plt.xlim(-0.6, 0.6)
-    plt.show()
-
-    if save_fig:
-        fig.savefig('../figures/distribution_{}.png'.format(name_fig))
-
-def plot_calibration_curves(df, color, name_fig, save_fig=False):
-    fig = plt.figure(figsize=(8, 6))
-    plt.scatter(df['written_by_human_decla'], df['written_by_human'], 
-            alpha=0.6, s=50, color=color)
-    plt.plot([0, 100], [0, 100], '--', color='black', label='Ideal calibration', linewidth=2)
-    plt.xlabel('Declared Authorship (%)', fontsize=14)
-    plt.xticks(fontsize=12)
-    plt.ylabel('Actual Authorship (%)', fontsize=14)
-    plt.yticks(fontsize=12)
-    # plt.title(f'High GPT usage (n={len(high_data)})', fontsize=12)
-    plt.xlim(0, 100)
-    plt.ylim(0, 100)
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
-    if save_fig:
-        fig.savefig('../figures/calibration_curve_{}.png'.format(name_fig))
-
-
-def plot_heatmap(df, name_fig, save_fig=False):
-    fig = plt.figure(figsize=(8, 6))
-    h_high = plt.hist2d(df['written_by_human_decla'], df['written_by_human'],
-                        bins=10, range=[[0, 100], [0, 100]], cmap='YlOrRd')
-    plt.plot([0, 100], [0, 100], '--', color='black', label='Ideal calibration', linewidth=2)
-    plt.xlabel('Declared Authorship (%)', fontsize=11)
-    plt.ylabel('Real Authorship (%)', fontsize=11)
-    # plt.title(f'High GPT usage (n={len(high_data)})', fontsize=12)
-    plt.legend()
-    plt.colorbar(label='Count')
-    plt.tight_layout()
-    plt.show()
-
-    if save_fig:
-        fig.savefig('../figures/heatmap_{}.png'.format(name_fig))
         
-
 def plot_barycenters_per_feature(barycenters, feature_names, n_clusters_optimal, save_fig=False):    
     palette = sns.color_palette("colorblind")
     my_palette = [palette[0], palette[1], palette[2], palette[4]]
@@ -105,61 +55,19 @@ def plot_barycenters_per_feature(barycenters, feature_names, n_clusters_optimal,
         fig.savefig('../figures/barycenters_clusters.png')
 
 
-def plot_calibration_scores(data, color_map, name_fig, save_fig=False):
-    fig = plt.figure(figsize=(10, 8))
-    calibration_values = data.iloc[:, [2]].values
-    plt.scatter(
-        data['written_by_human_decla'],  # X-axis: Declared Authorship
-        data['written_by_human'],       # Y-axis: Real Authorship
-        c=calibration_values,    # Color by calibration score
-        cmap=color_map,                # Use the specified color palette
-        s=70,                           # Size of the dots
-        alpha=0.8,                      # Transparency for better visualization
-        edgecolor='black'               # Black edges for the dots
-    )
-
-    plt.plot(
-        [0, 100],  # x-coordinates
-        [0, 100],  # y-coordinates
-        color='gray', linestyle='--', linewidth=2, label='x = y'
-    )
-
-
-
-    norm = Normalize(vmin=calibration_values.min(), vmax=calibration_values.max())
-    cbar = plt.colorbar(cm.ScalarMappable(norm=norm, cmap=color_map), ax=plt.gca())
-    cbar.set_label('Authorship Calibration Score', fontsize=12)
-
-    # Customize the plot
-    # plt.title('Scatter Plot of Declared vs Real Authorship by Calibration Score', fontsize=14, fontweight='bold')
-    plt.xlabel('Declared Authorship', fontsize=12)
-    plt.ylabel('Real Authorship', fontsize=12)
-    plt.xlim(-2, 102)
-    plt.ylim(-2, 102)
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
-
-    # Show the plot
-    plt.show()
-
-    if save_fig:
-        fig.savefig('../figures/calibration_plot_{}.png'.format(name_fig))
-
-
-
-def plot_lmm_coeffs(data, df_lmm, clusters, df_posthoc, authorship_scores, n_clusters_optimal, name_fig, save_fig=False):
+def plot_lmm_coeffs(data, df_lmm, clusters, df_posthoc, metric, n_clusters_optimal, x_axis_label, name_fig, save_fig=False):
     palette = sns.color_palette("colorblind")
-    my_palette = [palette[0], palette[1], palette[2], palette[3], palette[6], palette[9]]
+    my_palette = [palette[0], palette[1], palette[2], palette[4]]
 
     sns.set_theme(style="whitegrid")
     fig, ax = plt.subplots(figsize=(13, 6))
 
     sns.boxplot(
         data=data,
-        x=authorship_scores,
+        x=metric,
         y="cluster",
-        order=clusters,
-        palette=my_palette,
+        order=clusters,  # Reverse the order of clusters for better visualization
+        palette=my_palette[::-1],
         boxprops=dict(alpha=0.5),
         ax=ax,
     )
@@ -177,7 +85,7 @@ def plot_lmm_coeffs(data, df_lmm, clusters, df_posthoc, authorship_scores, n_clu
 
     ax.errorbar(
         x=model_means,
-        y=clusters,
+        y=clusters,  # Reverse the order of clusters for better visualization
         xerr=yerr,
         fmt="o",
         color="black",
@@ -186,7 +94,7 @@ def plot_lmm_coeffs(data, df_lmm, clusters, df_posthoc, authorship_scores, n_clu
         label="LMM Model-Estimated Mean (95% CI)",
     )
 
-    if name_fig=='raw':
+    if name_fig=='raw_calibration':
         ax.axvline(x=0, color="red", linestyle="--", linewidth=2, alpha=0.7, label="Perfect Calibration")
 
     sig_pairs = df_posthoc[df_posthoc["Significant (alpha=0.05)"]].copy().reset_index(drop=True)
@@ -208,7 +116,13 @@ def plot_lmm_coeffs(data, df_lmm, clusters, df_posthoc, authorship_scores, n_clu
 
             y_min = min(y1, y2) #- 0.15
             y_max = max(y1, y2) #+ 0.15
-            x_pos = 0.66 + idx * 0.04
+
+            if name_fig == 'raw_calibration' or name_fig == 'absolute_calibration':
+                x_pos = 0.66 + idx * 0.04
+            elif name_fig == 'authorship':
+                x_pos = 105 + idx * 2
+            else:  
+                x_pos = 1.05 + idx * 0.04
             bar_width = 0.01
 
             # Vertical line connecting the two clusters
@@ -245,63 +159,79 @@ def plot_lmm_coeffs(data, df_lmm, clusters, df_posthoc, authorship_scores, n_clu
         ax.set_xlim(left=min(ci_lower) - 0.2, right=max(1.1, 0.9 + len(sig_pairs) * 0.06 + 0.2))
 
 
-    ax.set_ylabel("Cluster", fontsize=14)
-    ax.set_yticks(range(n_clusters_optimal))
-    ax.legend(fontsize=12, loc='upper left')
+    ax.set_ylabel("Cluster", fontsize=16)
+    ax.set_yticks(
+        ticks=range(n_clusters_optimal)[::-1],
+        labels=[rf"$C_{{{i}}}$" for i in range(n_clusters_optimal)],
+        fontsize=16
+    )
+    ax.legend(fontsize=14, loc='upper left')
     ax.grid(True, alpha=0.3, axis='x')
     ax.set_ylim(-1, n_clusters_optimal+0.5)
-    ax.set_xlabel("Authorship Calibration Score ({})".format(name_fig), fontsize=14)
-    if name_fig=='raw':
+    ax.set_xlabel(x_axis_label, fontsize=14)
+    if name_fig=='raw_calibration':
         ax.set_xlim(-0.62, 0.62)
-    else: 
+    elif name_fig=='authorship':
+        ax.set_xlim(0, 100)
+    elif name_fig=='absolute_calibration':
         ax.set_xlim(-0.02, 0.62)
+    else: 
+        ax.set_xlim(0, 1)
     ax.legend(loc="upper left", frameon=True, facecolor="white")
     sns.despine()
     plt.tight_layout()
     plt.show()
 
     if save_fig:
-        fig.savefig('../figures/clusters_authorship_{}.png'.format(name_fig))
+        fig.savefig('../figures/boxplots_{}.png'.format(name_fig))
 
 
-def plot_time_evolution(data, model,  authorship_scores, name_fig, save_fig=False):
-    fig = plt.figure(figsize=(8, 6))
-    sns.set_theme(style="white")
+# def plot_scores_distribution(df, color, name_fig, save_fig=False):
+#     fig = plt.figure(figsize=(8, 3)) 
 
-    sns.scatterplot(
-        data=data, 
-        x='session_num', 
-        y=authorship_scores, 
-        alpha=0.3,
-        color='darkgray', 
-        label='Individual sessions'
-    )
+#     sns.histplot(df, bins=30, color=color, kde=True)
 
-    for writer, group in data.groupby('worker_id'):
-        plt.plot(group['session_num'], group[authorship_scores], color='blue', alpha=0.08, linewidth=1)
+#     plt.xlabel("Authorship Calibration Score")
+#     plt.ylabel("# Sessions")
+#     plt.xlim(-0.6, 0.6)
+#     plt.show()
 
-    intercept = model.params['Intercept']
-    slope = round(model.params['session_num'], 3)
+#     if save_fig:
+#         fig.savefig('../figures/distribution_{}.png'.format(name_fig))
 
-    x_vals = np.linspace(data['session_num'].min(), data['session_num'].max(), 100)
-    y_vals = intercept + slope * x_vals
+# def plot_calibration_curves(df, color, name_fig, save_fig=False):
+#     fig = plt.figure(figsize=(8, 6))
+#     plt.scatter(df['written_by_human_decla'], df['written_by_human'], 
+#             alpha=0.6, s=50, color=color)
+#     plt.plot([0, 100], [0, 100], '--', color='black', label='Ideal calibration', linewidth=2)
+#     plt.xlabel('Declared Authorship (%)', fontsize=14)
+#     plt.xticks(fontsize=12)
+#     plt.ylabel('Actual Authorship (%)', fontsize=14)
+#     plt.yticks(fontsize=12)
+#     # plt.title(f'High GPT usage (n={len(high_data)})', fontsize=12)
+#     plt.xlim(0, 100)
+#     plt.ylim(0, 100)
+#     plt.grid(True, alpha=0.3)
+#     plt.legend()
+#     plt.tight_layout()
+#     plt.show()
 
-    plt.plot(
-        x_vals, 
-        y_vals, 
-        color='darkred', 
-        linewidth=2.5, 
-        label='Linear LMM trend'
-    )
+#     if save_fig:
+#         fig.savefig('../figures/calibration_curve_{}.png'.format(name_fig))
 
 
-    plt.xlabel("Session Number", fontsize=11, labelpad=10)
-    plt.ylabel("Calibration Score", fontsize=11, labelpad=10)
-    plt.legend(frameon=True, facecolor='white', edgecolor='none', loc="lower right")
-    sns.despine() 
+# def plot_heatmap(df, name_fig, save_fig=False):
+#     fig = plt.figure(figsize=(8, 6))
+#     h_high = plt.hist2d(df['written_by_human_decla'], df['written_by_human'],
+#                         bins=10, range=[[0, 100], [0, 100]], cmap='YlOrRd')
+#     plt.plot([0, 100], [0, 100], '--', color='black', label='Ideal calibration', linewidth=2)
+#     plt.xlabel('Declared Authorship (%)', fontsize=11)
+#     plt.ylabel('Real Authorship (%)', fontsize=11)
+#     # plt.title(f'High GPT usage (n={len(high_data)})', fontsize=12)
+#     plt.legend()
+#     plt.colorbar(label='Count')
+#     plt.tight_layout()
+#     plt.show()
 
-    plt.tight_layout()
-    plt.show()
-
-    if save_fig:
-        fig.savefig('../figures/evolution_authorship_{}.png'.format(name_fig))
+#     if save_fig:
+#         fig.savefig('../figures/heatmap_{}.png'.format(name_fig))
