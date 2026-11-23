@@ -58,7 +58,7 @@ def plot_heatmap(df, name_fig, save_fig=False):
 
 def plot_barycenters_per_feature(barycenters, feature_names, n_clusters_optimal, save_fig=False):    
     palette = sns.color_palette("colorblind")
-    my_palette = [palette[0], palette[1], palette[2], palette[3], palette[6], palette[9]]
+    my_palette = [palette[0], palette[1], palette[2], palette[4]]
 
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     axes = axes.flatten()
